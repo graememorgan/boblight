@@ -35,6 +35,7 @@
 #endif
 #ifdef HAVE_LIBUSB
   #include "device/deviceusb.h"
+  #include "device/deviceyaac.h"
 #endif
 #ifdef HAVE_LINUX_SPI_SPIDEV_H
   #include "device/devicespi.h"
@@ -106,6 +107,7 @@ class CConfig
     bool BuildDioder(CDevice*& device, int devicenr, CClientsHandler& clients);
     bool BuildAmbioder(CDevice*& device, int devicenr, CClientsHandler& clients);
     bool SetDevicePrecision(CDeviceAmbioder*& device, int devicenr);
+		bool SetDeviceDelay(CDeviceYAAC*& device, int devicenr);
 
 #ifdef HAVE_LIBPORTAUDIO
     bool BuildSound(CDevice*& device, int devicenr, CClientsHandler& clients);
@@ -113,6 +115,7 @@ class CConfig
 #ifdef HAVE_LIBUSB
     bool BuildiBeLight(CDevice*& device, int devicenr, CClientsHandler& clients);
     bool BuildLightpack(CDevice*& device, int devicenr, CClientsHandler& clients);
+    bool BuildYAAC(CDevice*& device, int devicenr, CClientsHandler& clients);
 #endif
 #ifdef HAVE_LINUX_SPI_SPIDEV_H
     bool BuildSPI(CDevice*& device, int devicenr, CClientsHandler& clients, const std::string& type);

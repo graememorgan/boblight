@@ -31,6 +31,7 @@
 
 #ifdef HAVE_LIBUSB
   #include "device/devicelightpack.h"
+  #include "device/deviceyaac.h"
   #include "device/deviceibelight.h"
 #endif
 
@@ -300,7 +301,7 @@ bool CConfig::CheckDeviceConfig()
         continue;
       }
 
-      if (key == "name" || key == "output" || key == "type" || key == "serial")
+      if (key == "name" || key == "output" || key == "type" || key == "serial" || key == "delay")
       {
         continue; //can't check these here
       }
@@ -795,6 +796,23 @@ bool CConfig::BuildDeviceConfig(std::vector<CDevice*>& devices, CClientsHandler&
       return false;
 #endif
     }
+    else if (type == "YAAC")
+    {
+#ifdef HAVE_LIBUSB
+      CDevice* device = NULL;
+      if (!BuildYAAC(device, i, clients))
+      {
+        if (device)
+          delete device;
+        return false;
+      }
+      devices.push_back(device);
+#else
+      LogError("%s line %i: boblightd was built without libusb, no support for YAAC devices",
+               m_filename.c_str(), linenr);
+      return false;
+#endif
+    }
     else if (type == "lpd8806" || type == "ws2801")
     {
 #ifdef HAVE_LINUX_SPI_SPIDEV_H
@@ -1005,6 +1023,10 @@ bool CConfig::BuildRS232(CDevice*& device, int devicenr, CClientsHandler& client
   {
     device->SetType(SEDU);
   }
+	else if (type == "YAAC")
+	{
+		device->SetType(YAAC);
+	}
   
   return true;
 }
@@ -1132,6 +1154,34 @@ bool CConfig::BuildLightpack(CDevice*& device, int devicenr, CClientsHandler& cl
 }
 #endif
 
+#ifdef HAVE_LIBUSB
+bool CConfig::BuildYAAC(CDevice*& device, int devicenr, CClientsHandler& clients)
+{
+  CDeviceYAAC* YAACdevice = new CDeviceYAAC(clients);
+  device = YAACdevice;
+
+  if (!SetDeviceName(device, devicenr))
+    return false;
+
+  if (!SetDeviceChannels(device, devicenr))
+    return false;
+
+  if (!SetDeviceInterval(device, devicenr))
+    return false;
+
+  SetDeviceBus(YAACdevice, devicenr);
+  SetDeviceAddress(YAACdevice, devicenr);
+  SetSerial(YAACdevice, devicenr);
+  SetDeviceAllowSync(YAACdevice, devicenr);
+  SetDeviceDebug(YAACdevice, devicenr);
+  SetDeviceThreadPriority(YAACdevice, devicenr);
+  SetDeviceDelay(YAACdevice, devicenr);
+
+  device->SetType(YAAC);
+
+  return true;
+}
+#endif
 
 bool CConfig::BuildDioder(CDevice*& device, int devicenr, CClientsHandler& clients)
 {
@@ -1213,6 +1263,24 @@ bool CConfig::SetDevicePrecision(CDeviceAmbioder*& device, int devicenr)
   StrToInt(strvalue, precision);
 
   if(!device->SetPrecision(precision))
+    return false;
+
+  return true;
+}
+
+bool CConfig::SetDeviceDelay(CDeviceYAAC*& device, int devicenr)
+{
+  string line, strvalue;
+  int linenr = GetLineWithKey("delay", m_devicelines[devicenr].lines, line);
+  if (linenr == -1)
+    return false;
+
+  GetWord(line, strvalue);
+
+  int delay;
+  StrToInt(strvalue, delay);
+
+  if(!device->SetDelay(delay))
     return false;
 
   return true;
